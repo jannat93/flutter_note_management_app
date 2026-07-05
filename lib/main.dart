@@ -1,33 +1,38 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 
 import 'firebase_options.dart';
+import 'screens/notes_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+    options:
+    DefaultFirebaseOptions
+        .currentPlatform,
   );
 
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp
+    extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: Center(
-          child: Text(
-            'Firebase Connected Successfully',
-            style: TextStyle(fontSize: 20),
-          ),
-        ),
+    return MaterialApp(
+      debugShowCheckedModeBanner:
+      false,
+      title:
+      'Notes Management App',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed:
+        Colors.deepPurple,
       ),
+      home: const NotesScreen(),
     );
   }
 }
