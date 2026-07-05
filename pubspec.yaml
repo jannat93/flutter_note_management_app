@@ -39,8 +39,17 @@ dependencies:
   provider: ^6.1.5+1
   intl: ^0.20.2
   share_plus: ^12.0.2
-  flutter_local_notifications: ^20.1.0
+  flutter_local_notifications: ^19.4.0
   timezone: ^0.10.1
+  flutter_timezone: ^5.1.0
+  flutter_launcher_icons: "^0.14.4"
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/logo.png"
+
+  remove_alpha_ios: true
 
 dev_dependencies:
   flutter_test:

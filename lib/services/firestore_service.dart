@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/note_model.dart';
+import 'notification_service.dart';
 
 class FirestoreService {
   final FirebaseFirestore firestore =
@@ -30,10 +31,13 @@ class FirestoreService {
     );
   }
 
-  Future<void> addNote(
+  /// Returns the new document's id, so the caller can immediately
+  /// schedule a reminder notification tied to this note.
+  Future<String> addNote(
       NoteModel note,
       ) async {
-    await notes.add(note.toMap());
+    final docRef = await notes.add(note.toMap());
+    return docRef.id;
   }
 
   Future<void> updateNote(
@@ -48,6 +52,10 @@ class FirestoreService {
       String id,
       ) async {
     await notes.doc(id).delete();
+    // Make sure a deleted note doesn't still fire a reminder later.
+    await NotificationService.cancelReminder(
+      NotificationService.idFromNoteId(id),
+    );
   }
 
   Future<void> toggleFavorite(
