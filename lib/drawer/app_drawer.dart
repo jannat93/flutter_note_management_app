@@ -1,78 +1,107 @@
 import 'package:flutter/material.dart';
 
+import '../screens/about_screen.dart';
+import '../screens/settings_screen.dart';
+
 class AppDrawer extends StatelessWidget {
-  const AppDrawer({super.key});
+  final Function(String) onFilterSelected;
+
+  const AppDrawer({
+    super.key,
+    required this.onFilterSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
       child: ListView(
+        padding: EdgeInsets.zero,
         children: [
-          const DrawerHeader(
-            decoration: BoxDecoration(
-              color: Colors.deepPurple,
+          Container(
+            padding: const EdgeInsets.only(
+              top: 60,
+              left: 20,
+              bottom: 20,
             ),
-            child: Column(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.deepPurple,
+                  Colors.purple,
+                ],
+              ),
+            ),
+            child: const Column(
               crossAxisAlignment:
               CrossAxisAlignment.start,
-              mainAxisAlignment:
-              MainAxisAlignment.end,
               children: [
-                Icon(
-                  Icons.note_alt,
-                  color: Colors.white,
-                  size: 50,
+                CircleAvatar(
+                  radius: 30,
+                  child: Icon(
+                    Icons.note_alt,
+                    size: 35,
+                  ),
                 ),
                 SizedBox(height: 10),
                 Text(
-                  'Notes Manager',
+                  "Notes Manager",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 22,
+                    fontWeight:
+                    FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  "Manage your tasks easily",
+                  style: TextStyle(
+                    color: Colors.white70,
                   ),
                 ),
               ],
             ),
           ),
 
-          ListTile(
-            leading:
-            const Icon(Icons.notes),
-            title:
-            const Text('All Notes'),
-            onTap: () {},
+          _drawerTile(
+            context,
+            Icons.notes,
+            "All Notes",
+            "all",
           ),
 
-          ListTile(
-            leading:
-            const Icon(Icons.star),
-            title:
-            const Text('Favorites'),
-            onTap: () {},
+          _drawerTile(
+            context,
+            Icons.star,
+            "Favorites",
+            "favorite",
           ),
 
-          ListTile(
-            leading:
-            const Icon(Icons.history),
-            title:
-            const Text('Recent Notes'),
-            onTap: () {},
+          _drawerTile(
+            context,
+            Icons.history,
+            "Recent Notes",
+            "recent",
           ),
 
-          ListTile(
-            leading:
-            const Icon(Icons.warning),
-            title:
-            const Text('Overdue'),
-            onTap: () {},
+          _drawerTile(
+            context,
+            Icons.pending_actions,
+            "Pending",
+            "pending",
           ),
 
-          ListTile(
-            leading:
-            const Icon(Icons.check),
-            title:
-            const Text('Finished'),
-            onTap: () {},
+          _drawerTile(
+            context,
+            Icons.check_circle,
+            "Completed",
+            "completed",
+          ),
+
+          _drawerTile(
+            context,
+            Icons.warning,
+            "Overdue",
+            "overdue",
           ),
 
           const Divider(),
@@ -81,19 +110,53 @@ class AppDrawer extends StatelessWidget {
             leading:
             const Icon(Icons.settings),
             title:
-            const Text('Settings'),
-            onTap: () {},
+            const Text("Settings"),
+            onTap: () {
+              Navigator.pop(context);
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                  const SettingsScreen(),
+                ),
+              );
+            },
           ),
 
           ListTile(
-            leading:
-            const Icon(Icons.info),
-            title:
-            const Text('About'),
-            onTap: () {},
+            leading: const Icon(Icons.info),
+            title: const Text("About"),
+            onTap: () {
+              Navigator.pop(context);
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                  const AboutScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),
+    );
+  }
+
+  Widget _drawerTile(
+      BuildContext context,
+      IconData icon,
+      String title,
+      String filter,
+      ) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      onTap: () {
+        Navigator.pop(context);
+        onFilterSelected(filter);
+      },
     );
   }
 }

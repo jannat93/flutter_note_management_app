@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:note_management_app/services/notification_service.dart';
 
 import 'firebase_options.dart';
 import 'screens/notes_screen.dart';
@@ -12,6 +13,7 @@ Future<void> main() async {
     DefaultFirebaseOptions
         .currentPlatform,
   );
+  await NotificationService.init();
 
   runApp(const MyApp());
 }

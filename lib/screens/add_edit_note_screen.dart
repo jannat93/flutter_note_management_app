@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import '../models/note_model.dart';
 import '../services/firestore_service.dart';
 
-class AddEditNoteScreen extends StatefulWidget {
+class AddEditNoteScreen
+    extends StatefulWidget {
   final NoteModel? note;
 
   const AddEditNoteScreen({
@@ -13,19 +14,24 @@ class AddEditNoteScreen extends StatefulWidget {
   });
 
   @override
-  State<AddEditNoteScreen> createState() =>
+  State<AddEditNoteScreen>
+  createState() =>
       _AddEditNoteScreenState();
 }
 
 class _AddEditNoteScreenState
-    extends State<AddEditNoteScreen> {
+    extends State<
+        AddEditNoteScreen> {
   final titleController =
   TextEditingController();
 
   final descriptionController =
   TextEditingController();
 
-  String status = 'Pending';
+  String status = "Pending";
+
+  DateTime selectedDate =
+  DateTime.now();
 
   final firestoreService =
   FirestoreService();
@@ -41,7 +47,32 @@ class _AddEditNoteScreenState
       descriptionController.text =
           widget.note!.description;
 
-      status = widget.note!.status;
+      status =
+          widget.note!.status;
+
+      selectedDate = widget
+          .note!.dueDate
+          .toDate();
+    }
+  }
+
+  Future<void> pickDate() async {
+    final picked =
+    await showDatePicker(
+      context: context,
+      initialDate:
+      selectedDate,
+      firstDate:
+      DateTime.now(),
+      lastDate:
+      DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() {
+        selectedDate =
+            picked;
+      });
     }
   }
 
@@ -52,39 +83,23 @@ class _AddEditNoteScreenState
       return;
     }
 
+    final note = NoteModel(
+      id: widget.note?.id ?? "",
+      title: titleController.text.trim(),
+      description: descriptionController.text.trim(),
+      isFavorite: widget.note?.isFavorite ?? false,
+      status: status,
+      progress: widget.note?.progress ?? 0,
+      createdAt: widget.note?.createdAt ?? Timestamp.now(),
+      dueDate: Timestamp.fromDate(selectedDate),
+    );
+
     if (widget.note == null) {
-      final note = NoteModel(
-        id: '',
-        title:
-        titleController.text.trim(),
-        description:
-        descriptionController.text
-            .trim(),
-        isFavorite: false,
-        status: status,
-        createdAt: Timestamp.now(),
-      );
-
-      await firestoreService.addNote(
-        note,
-      );
-    } else {
-      final updated = NoteModel(
-        id: widget.note!.id,
-        title:
-        titleController.text.trim(),
-        description:
-        descriptionController.text
-            .trim(),
-        isFavorite:
-        widget.note!.isFavorite,
-        status: status,
-        createdAt:
-        widget.note!.createdAt,
-      );
-
       await firestoreService
-          .updateNote(updated);
+          .addNote(note);
+    } else {
+      await firestoreService
+          .updateNote(note);
     }
 
     if (mounted) {
@@ -93,18 +108,20 @@ class _AddEditNoteScreenState
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
           widget.note == null
-              ? 'Add Note'
-              : 'Edit Note',
+              ? "Add Note"
+              : "Edit Note",
         ),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding:
-        const EdgeInsets.all(16),
+        const EdgeInsets.all(
+            16),
         child: Column(
           children: [
             TextField(
@@ -112,11 +129,13 @@ class _AddEditNoteScreenState
               titleController,
               decoration:
               const InputDecoration(
-                labelText: 'Title',
+                labelText:
+                "Title",
               ),
             ),
 
-            const SizedBox(height: 15),
+            const SizedBox(
+                height: 16),
 
             TextField(
               controller:
@@ -125,29 +144,33 @@ class _AddEditNoteScreenState
               decoration:
               const InputDecoration(
                 labelText:
-                'Description',
+                "Description",
               ),
             ),
 
-            const SizedBox(height: 15),
+            const SizedBox(
+                height: 16),
 
             DropdownButtonFormField(
               value: status,
               items: const [
                 DropdownMenuItem(
-                  value: 'Pending',
-                  child:
-                  Text('Pending'),
+                  value:
+                  "Pending",
+                  child: Text(
+                      "Pending"),
                 ),
                 DropdownMenuItem(
-                  value: 'Completed',
-                  child:
-                  Text('Completed'),
+                  value:
+                  "Completed",
+                  child: Text(
+                      "Completed"),
                 ),
                 DropdownMenuItem(
-                  value: 'Overdue',
-                  child:
-                  Text('Overdue'),
+                  value:
+                  "Overdue",
+                  child: Text(
+                      "Overdue"),
                 ),
               ],
               onChanged: (value) {
@@ -158,14 +181,45 @@ class _AddEditNoteScreenState
               },
             ),
 
-            const SizedBox(height: 25),
+            const SizedBox(
+                height: 20),
+
+            Card(
+              child: ListTile(
+                leading:
+                const Icon(
+                  Icons
+                      .calendar_month,
+                ),
+                title: Text(
+                  "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
+                ),
+                trailing:
+                ElevatedButton(
+                  onPressed:
+                  pickDate,
+                  child:
+                  const Text(
+                    "Select",
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(
+                height: 30),
 
             SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: saveNote,
-                child: const Text(
-                  'Save Note',
+              width:
+              double.infinity,
+              height: 55,
+              child:
+              ElevatedButton(
+                onPressed:
+                saveNote,
+                child:
+                const Text(
+                  "Save Note",
                 ),
               ),
             ),

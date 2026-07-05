@@ -19,11 +19,12 @@ class FirestoreService {
         .map(
           (snapshot) => snapshot.docs
           .map(
-            (doc) => NoteModel.fromMap(
-          doc.id,
-          doc.data()
-          as Map<String, dynamic>,
-        ),
+            (doc) =>
+            NoteModel.fromMap(
+              doc.id,
+              doc.data()
+              as Map<String, dynamic>,
+            ),
       )
           .toList(),
     );
@@ -47,5 +48,14 @@ class FirestoreService {
       String id,
       ) async {
     await notes.doc(id).delete();
+  }
+
+  Future<void> toggleFavorite(
+      NoteModel note,
+      ) async {
+    await notes.doc(note.id).update({
+      'isFavorite':
+      !note.isFavorite,
+    });
   }
 }

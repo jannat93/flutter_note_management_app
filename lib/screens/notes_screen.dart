@@ -7,63 +7,75 @@ import '../services/firestore_service.dart';
 import '../widgets/note_card.dart';
 import 'add_edit_note_screen.dart';
 
-class NotesScreen
-    extends StatefulWidget {
-  const NotesScreen({
-    super.key,
-  });
+class NotesScreen extends StatefulWidget {
+  const NotesScreen({super.key});
 
   @override
-  State<NotesScreen> createState() =>
-      _NotesScreenState();
+  State<NotesScreen> createState() => _NotesScreenState();
 }
 
-class _NotesScreenState
-    extends State<NotesScreen> {
-  final firestoreService =
+class _NotesScreenState extends State<NotesScreen> {
+  final FirestoreService firestoreService =
   FirestoreService();
 
   String search = '';
+  String sortBy = 'date';
+  String selectedFilter = 'all';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const AppDrawer(),
+      drawer: AppDrawer(
+        onFilterSelected: (value) {
+          setState(() {
+            selectedFilter = value;
+          });
+        },
+      ),
 
       appBar: AppBar(
         title: const Text(
           'Notes Manager',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
         ),
 
         actions: [
-          PopupMenuButton(
+          PopupMenuButton<String>(
             onSelected: (value) {
-              if (value == 'share') {
-                Share.share(
-                  'Check out my Notes App!',
-                );
+              switch (value) {
+                case 'sortDate':
+                  setState(() {
+                    sortBy = 'date';
+                  });
+                  break;
+
+                case 'sortTitle':
+                  setState(() {
+                    sortBy = 'title';
+                  });
+                  break;
+
+                case 'share':
+                  Share.share(
+                    'Check out my Notes Manager App 🚀',
+                  );
+                  break;
               }
             },
-            itemBuilder:
-                (context) => [
+            itemBuilder: (context) => [
               const PopupMenuItem(
                 value: 'sortDate',
-                child: Text(
-                  'Sort By Date',
-                ),
+                child: Text('Sort By Date'),
               ),
               const PopupMenuItem(
-                value:
-                'sortTitle',
-                child: Text(
-                  'Sort By Title',
-                ),
+                value: 'sortTitle',
+                child: Text('Sort By Title'),
               ),
               const PopupMenuItem(
                 value: 'share',
-                child: Text(
-                  'Share App',
-                ),
+                child: Text('Share App'),
               ),
             ],
           ),
@@ -73,17 +85,16 @@ class _NotesScreenState
       body: Column(
         children: [
           Padding(
-            padding:
-            const EdgeInsets.all(
-              12,
-            ),
+            padding: const EdgeInsets.all(16),
             child: TextField(
-              decoration:
-              const InputDecoration(
+              decoration: InputDecoration(
+                hintText: 'Search notes...',
                 prefixIcon:
-                Icon(Icons.search),
-                hintText:
-                'Search notes...',
+                const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius:
+                  BorderRadius.circular(15),
+                ),
               ),
               onChanged: (value) {
                 setState(() {
@@ -94,34 +105,99 @@ class _NotesScreenState
           ),
 
           Expanded(
-            child: StreamBuilder<
-                List<NoteModel>>(
-              stream: firestoreService
-                  .getNotes(),
+            child: StreamBuilder<List<NoteModel>>(
+              stream:
+              firestoreService.getNotes(),
               builder:
                   (context, snapshot) {
-                if (!snapshot
-                    .hasData) {
+                if (!snapshot.hasData) {
                   return const Center(
                     child:
                     CircularProgressIndicator(),
                   );
                 }
 
-                var notes =
+                List<NoteModel> notes =
                 snapshot.data!;
 
-                notes = notes
-                    .where(
-                      (note) =>
+                /// SEARCH + FILTER
+                notes = notes.where((note) {
+                  bool matchesSearch =
                       note.title
                           .toLowerCase()
                           .contains(
                         search
                             .toLowerCase(),
-                      ),
-                )
-                    .toList();
+                      ) ||
+                          note.description
+                              .toLowerCase()
+                              .contains(
+                            search
+                                .toLowerCase(),
+                          );
+
+                  if (!matchesSearch) {
+                    return false;
+                  }
+
+                  switch (selectedFilter) {
+                    case 'favorite':
+                      return note.isFavorite;
+
+                    case 'recent':
+                      return true;
+
+                    case 'pending':
+                      return note.status ==
+                          'Pending';
+
+                    case 'completed':
+                      return note.status ==
+                          'Completed';
+
+                    case 'overdue':
+                      return note.dueDate
+                          .toDate()
+                          .isBefore(
+                        DateTime.now(),
+                      ) &&
+                          note.status !=
+                              'Completed';
+
+                    default:
+                      return true;
+                  }
+                }).toList();
+
+                /// SORTING
+                if (selectedFilter ==
+                    'recent') {
+                  notes.sort(
+                        (a, b) => b.createdAt
+                        .toDate()
+                        .compareTo(
+                      a.createdAt
+                          .toDate(),
+                    ),
+                  );
+                } else if (sortBy ==
+                    'title') {
+                  notes.sort(
+                        (a, b) =>
+                        a.title.compareTo(
+                          b.title,
+                        ),
+                  );
+                } else {
+                  notes.sort(
+                        (a, b) => b.createdAt
+                        .toDate()
+                        .compareTo(
+                      a.createdAt
+                          .toDate(),
+                    ),
+                  );
+                }
 
                 if (notes.isEmpty) {
                   return const Center(
@@ -131,39 +207,121 @@ class _NotesScreenState
                   );
                 }
 
-                return ListView
-                    .builder(
-                  itemCount:
-                  notes.length,
-                  itemBuilder:
-                      (context,
-                      index) {
-                    final note =
-                    notes[index];
+                int completed =
+                    notes
+                        .where(
+                          (e) =>
+                      e.status ==
+                          "Completed",
+                    )
+                        .length;
 
-                    return NoteCard(
-                      note: note,
-                      onEdit: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (_) =>
-                                AddEditNoteScreen(
-                                  note:
-                                  note,
+                double progress =
+                notes.isEmpty
+                    ? 0
+                    : completed /
+                    notes.length;
+
+                return Column(
+                  children: [
+                    Padding(
+                      padding:
+                      const EdgeInsets
+                          .symmetric(
+                        horizontal: 16,
+                      ),
+                      child: Card(
+                        child: Padding(
+                          padding:
+                          const EdgeInsets
+                              .all(16),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                MainAxisAlignment
+                                    .spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Task Progress',
+                                    style:
+                                    TextStyle(
+                                      fontWeight:
+                                      FontWeight
+                                          .bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$completed/${notes.length}',
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(
+                                  height: 10),
+
+                              LinearProgressIndicator(
+                                value: progress,
+                                minHeight: 10,
+                                borderRadius:
+                                BorderRadius
+                                    .circular(
+                                  10,
                                 ),
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                      onDelete: () {
-                        firestoreService
-                            .deleteNote(
-                          note.id,
-                        );
-                      },
-                    );
-                  },
+                        ),
+                      ),
+                    ),
+
+                    Expanded(
+                      child:
+                      ListView.builder(
+                        itemCount:
+                        notes.length,
+                        itemBuilder:
+                            (context,
+                            index) {
+                          final note =
+                          notes[index];
+
+                          return NoteCard(
+                            note: note,
+
+                            onEdit: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) =>
+                                      AddEditNoteScreen(
+                                        note:
+                                        note,
+                                      ),
+                                ),
+                              );
+                            },
+
+                            onDelete: () async {
+                              await firestoreService
+                                  .deleteNote(
+                                note.id,
+                              );
+                            },
+
+                            onFavorite:
+                                () async {
+                              await firestoreService
+                                  .toggleFavorite(
+                                note,
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -172,7 +330,7 @@ class _NotesScreenState
       ),
 
       floatingActionButton:
-      FloatingActionButton(
+      FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
             context,
@@ -182,8 +340,10 @@ class _NotesScreenState
             ),
           );
         },
-        child:
-        const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text(
+          'New Note',
+        ),
       ),
     );
   }
